@@ -3,8 +3,10 @@ package ru.dimakar.internetshop.service;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.dimakar.internetshop.dto.AddNewProductRequest;
 import ru.dimakar.internetshop.dto.ProductDto;
+import ru.dimakar.internetshop.ex.BadRequestException;
 import ru.dimakar.internetshop.model.ProductModel;
 import ru.dimakar.internetshop.repository.ProductRepository;
 
@@ -18,9 +20,13 @@ public class ProductService {
 
     ModelMapper mapper = new ModelMapper();
 
+    @Transactional
     public ProductDto addNewProduct(AddNewProductRequest addNewProductRequest) {
-        // TODO: 17.09.2022 check that name is unique
-        ProductModel productModel = mapper.map(addNewProductRequest, ProductModel.class);
+        ProductModel productModel = productRepository.findProductModelByName(addNewProductRequest.getName());
+        if (productModel != null) {
+            throw new BadRequestException("Product with name '" + addNewProductRequest.getName() + "' already exists");
+        }
+        productModel = mapper.map(addNewProductRequest, ProductModel.class);
         return mapper.map(productRepository.save(productModel), ProductDto.class);
     }
 
